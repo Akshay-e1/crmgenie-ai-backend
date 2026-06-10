@@ -1,15 +1,16 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from fastapi import APIRouter
 
-from db import get_db
 from agent.langgraph_agent import agent
-from agent.tools import log_interaction_tool, edit_interaction_tool
+from agent.tools import (
+    log_interaction_tool,
+    edit_interaction_tool
+)
 
 router = APIRouter()
 
 
 @router.post("/ai-log")
-def ai_log(data: dict, db: Session = Depends(get_db)):
+def ai_log(data: dict):
 
     # Run LangGraph
     result = agent.invoke({
@@ -34,20 +35,20 @@ def ai_log(data: dict, db: Session = Depends(get_db)):
         }
 
     # Tool 4
-    obj = log_interaction_tool(db, structured)
+    obj = log_interaction_tool(structured)
     tools_used.append("log_interaction")
 
     # Tool 5
-    obj = edit_interaction_tool(db, obj)
+    obj = edit_interaction_tool(obj)
     tools_used.append("edit_interaction")
 
     print("TOOLS USED:", tools_used)
 
     return {
-        "hcp_name": obj.hcp_name,
-        "topics": obj.topics,
-        "sentiment": obj.sentiment,
-        "follow_up": obj.follow_up,
+        "hcp_name": obj["hcp_name"],
+        "topics": obj["topics"],
+        "sentiment": obj["sentiment"],
+        "follow_up": obj["follow_up"],
 
         # From LangGraph
         "date": structured.get("date"),

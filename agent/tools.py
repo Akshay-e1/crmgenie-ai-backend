@@ -1,6 +1,8 @@
 import json
-from llm import llm
 from datetime import datetime
+
+from llm import llm
+from database import interactions_collection
 
 
 # 1️⃣ Extract Interaction Tool
@@ -75,7 +77,7 @@ Text:
 
         return "Neutral"
 
-    except:
+    except Exception:
         return "Neutral"
 
 
@@ -93,12 +95,12 @@ Text:
     try:
         return llm.invoke(prompt).content.strip()
 
-    except:
+    except Exception:
         return "Schedule follow-up meeting."
 
 
 # 4️⃣ Date Time Tool
-def datetime_tool(text):
+def datetime_tool(text=None):
     print("✅ Tool Used: datetime_tool")
 
     now = datetime.now()
@@ -128,34 +130,34 @@ Text:
     try:
         return llm.invoke(prompt).content.strip()
 
-    except:
+    except Exception:
         return "Interaction completed."
 
 
-# DB Save Tool
-def log_interaction_tool(db, data):
-    from models import Interaction
+# 6️⃣ MongoDB Save Tool
+def log_interaction_tool(data):
+    print("✅ Tool Used: log_interaction_tool")
 
-    allowed_data = {
+    result = interactions_collection.insert_one({
         "hcp_name": data.get("hcp_name"),
         "topics": data.get("topics"),
         "sentiment": data.get("sentiment"),
-        "follow_up": data.get("follow_up")
+        "follow_up": data.get("follow_up"),
+        "date": data.get("date"),
+        "time": data.get("time"),
+        "outcomes": data.get("outcomes")
+    })
+
+    return {
+        "_id": str(result.inserted_id),
+        **data
     }
 
-    obj = Interaction(**allowed_data)
 
-    db.add(obj)
-    db.commit()
-    db.refresh(obj)
+# 7️⃣ Edit Tool
+def edit_interaction_tool(obj):
+    print("✅ Tool Used: edit_interaction_tool")
 
-    return obj
-
-
-# Edit Tool
-def edit_interaction_tool(db, obj):
-    obj.topics = obj.topics + " (verified)"
-
-    db.commit()
+    obj["topics"] = obj.get("topics", "") + " (verified)"
 
     return obj
