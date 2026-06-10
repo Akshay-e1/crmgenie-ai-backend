@@ -19,9 +19,9 @@ def export_excel(user_id: str):
     if not records:
         return {"error": "No records found"}
 
-    username = records[0]["user_name"]
+    username = records[0].get("user_name", "User")
 
-    filename = f"{username}_{user_id}_History.xlsx"
+    excel_path = f"/tmp/{username}_{user_id}_History.xlsx"
 
     wb = Workbook()
     ws = wb.active
@@ -46,22 +46,22 @@ def export_excel(user_id: str):
     for i, item in enumerate(records, start=1):
 
         ws.append([
-            item.get("user_name"),
-            item.get("user_id"),
+            item.get("user_name", ""),
+            item.get("user_id", ""),
             i,
-            item.get("hcp_name"),
-            item.get("topics"),
-            item.get("sentiment"),
-            item.get("outcomes"),
-            item.get("follow_up"),
-            item.get("date"),
-            item.get("time")
+            item.get("hcp_name", ""),
+            item.get("topics", ""),
+            item.get("sentiment", ""),
+            item.get("outcomes", ""),
+            item.get("follow_up", ""),
+            item.get("date", ""),
+            item.get("time", "")
         ])
 
-    wb.save(filename)
+    wb.save(excel_path)
 
     return FileResponse(
-        filename,
+        path=excel_path,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        filename=filename
+        filename=f"{username}_{user_id}_History.xlsx"
     )

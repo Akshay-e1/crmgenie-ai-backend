@@ -25,11 +25,11 @@ def export_pdf(user_id: str):
     if not records:
         return {"error": "No records found"}
 
-    username = records[0]["user_name"]
+    username = records[0].get("user_name", "User")
 
-    filename = f"{username}_{user_id}_History.pdf"
+    pdf_path = f"/tmp/{username}_{user_id}_History.pdf"
 
-    doc = SimpleDocTemplate(filename)
+    doc = SimpleDocTemplate(pdf_path)
 
     styles = getSampleStyleSheet()
 
@@ -62,61 +62,62 @@ def export_pdf(user_id: str):
 
         elements.append(
             Paragraph(
-                f"HCP Name: {item.get('hcp_name')}",
+                f"HCP Name: {item.get('hcp_name', '')}",
                 styles["Normal"]
             )
         )
 
         elements.append(
             Paragraph(
-                f"Topics: {item.get('topics')}",
+                f"Topics: {item.get('topics', '')}",
                 styles["Normal"]
             )
         )
 
         elements.append(
             Paragraph(
-                f"Sentiment: {item.get('sentiment')}",
+                f"Sentiment: {item.get('sentiment', '')}",
                 styles["Normal"]
             )
         )
 
         elements.append(
             Paragraph(
-                f"Outcomes: {item.get('outcomes')}",
+                f"Outcomes: {item.get('outcomes', '')}",
                 styles["Normal"]
             )
         )
 
         elements.append(
             Paragraph(
-                f"Follow Up: {item.get('follow_up')}",
+                f"Follow Up: {item.get('follow_up', '')}",
                 styles["Normal"]
             )
         )
 
         elements.append(
             Paragraph(
-                f"Date: {item.get('date')}",
+                f"Date: {item.get('date', '')}",
                 styles["Normal"]
             )
         )
 
         elements.append(
             Paragraph(
-                f"Time: {item.get('time')}",
+                f"Time: {item.get('time', '')}",
                 styles["Normal"]
             )
         )
 
         elements.append(Spacer(1, 20))
 
-        elements.append(PageBreak())
+        if i < len(records):
+            elements.append(PageBreak())
 
     doc.build(elements)
 
     return FileResponse(
-        filename,
+        path=pdf_path,
         media_type="application/pdf",
-        filename=filename
+        filename=f"{username}_{user_id}_History.pdf"
     )
