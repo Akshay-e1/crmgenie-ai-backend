@@ -12,48 +12,71 @@ router = APIRouter()
 @router.post("/ai-log")
 def ai_log(data: dict):
 
+    text = data.get("text", "").strip()
+
+    if not text:
+        return {
+            "error": "Text is required"
+        }
+
+    print("📝 INPUT:", text)
+
+    # -----------------------------------------------------
     # Run LangGraph
+    # -----------------------------------------------------
     result = agent.invoke({
-        "input": data.get("text")
+        "input": text
     })
 
-    print("AGENT RESULT:", result)
+    print("🤖 AGENT RESULT:", result)
 
     if result is None:
         return {
             "error": "Agent failed"
         }
 
+    # -----------------------------------------------------
+    # Get structured data
+    # -----------------------------------------------------
     structured = result.get("data")
-    tools_used = result.get("tools_used", [])
 
-    print("STRUCTURED:", structured)
+    tools_used = list(
+        result.get("tools_used", [])
+    )
+
+    print("📦 STRUCTURED:", structured)
 
     if structured is None:
         return {
             "error": "No structured output"
         }
 
-    # Tool 4
-    obj = log_interaction_tool(structured)
-    tools_used.append("log_interaction")
+    # -----------------------------------------------------
+    # Edit / Verify
+    # -----------------------------------------------------
+    structured = edit_interaction_tool(structured)
 
-    # Tool 5
-    obj = edit_interaction_tool(obj)
     tools_used.append("edit_interaction")
 
-    print("TOOLS USED:", tools_used)
+    # -----------------------------------------------------
+    # Save to MongoDB
+    # -----------------------------------------------------
+    saved = log_interaction_tool(structured)
 
+    tools_used.append("log_interaction")
+
+    print("🛠️ TOOLS USED:", tools_used)
+
+    # -----------------------------------------------------
+    # Return response
+    # -----------------------------------------------------
     return {
-        "hcp_name": obj["hcp_name"],
-        "topics": obj["topics"],
-        "sentiment": obj["sentiment"],
-        "follow_up": obj["follow_up"],
-
-        # From LangGraph
-        "date": structured.get("date"),
-        "time": structured.get("time"),
-        "outcomes": structured.get("outcomes"),
-
+        "hcp_name": saved.get("hcp_name"),
+        "topics": saved.get("topics"),
+        "sentiment": saved.get("sentiment"),
+        "follow_up": saved.get("follow_up"),
+        "date": saved.get("date"),
+        "time": saved.get("time"),
+        "outcomes": saved.get("outcomes"),
         "tools_used": tools_used
     }
